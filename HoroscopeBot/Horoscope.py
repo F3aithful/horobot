@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import re
+import os
 from datetime import datetime, timedelta
 
 import aiosqlite
@@ -15,13 +16,13 @@ from aiogram.client.default import DefaultBotProperties
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from gigachat import GigaChat
 
-# ====================== ТОКЕНЫ ======================
-TOKEN = "8762682425:AAF41Nx6iksQdyWE38RpUl3kYwHo9pdTky8"
-GIGACHAT_CREDENTIALS = "MDE5ZDkyNjEtOGNlMS03MGMwLTg4ODktMGViZTQzYTVhNTk2OmY5MDQ4YmUyLTA5NmItNGFjNC04Mzg1LWVlMjYxMmU5NDRjMg=="
+# ====================== ENV ======================
+TOKEN = os.getenv("TOKEN")
+GIGACHAT_CREDENTIALS = os.getenv("GIGACHAT_CREDENTIALS")
 
 DB_NAME = "users.db"
 
-# ====================== ЛОГИ ======================
+# ====================== LOGGING ======================
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 dp = Dispatcher()
 
-# ====================== КЛАВИАТУРЫ ======================
+# ====================== KEYBOARDS ======================
 main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="Получить гороскоп сейчас")],
@@ -64,8 +65,7 @@ async def init_db():
             )
         """)
         await db.commit()
-
-    logger.info("✅ База данных инициализирована")
+    logger.info("✅ DB ready")
 
 # ====================== FSM ======================
 class Register(StatesGroup):
@@ -81,22 +81,19 @@ gigachat = GigaChat(
 
 semaphore = asyncio.Semaphore(5)
 
-async def generate_horoscope(zodiac: str, birth_time: str, birth_place: str, student: bool = False):
+async def generate_horoscope(zodiac, birth_time, birth_place, student=False):
     async with semaphore:
-        mode = ""
-        if student:
-            mode = "Акцент: учеба, экзамены, дедлайны, мотивация."
 
-        prompt = f"""
-Ты астролог с лёгким юмором.
-{mode}
+        mode = "Акцент: учеба, экзамены, дедлайны, мотивация." if student else ""
 
-Знак: {zodiac}
-Время рождения: {birth_time}
-Место рождения: {birth_place}
-
-Напиши живой гороскоп (~150-200 слов) и добавь побольше эмодзи.
-"""
+        prompt = (
+            f"Ты астролог с лёгким юмором.\n"
+            f"{mode}\n\n"
+            f"Знак: {zodiac}\n"
+            f"Время рождения: {birth_time}\n"
+            f"Место рождения: {birth_place}\n\n"
+            f"Сделай короткий живой гороскоп (120–160 слов), много эмодзи ✨🌙🔥"
+        )
 
         try:
             loop = asyncio.get_running_loop()
@@ -106,9 +103,10 @@ async def generate_horoscope(zodiac: str, birth_time: str, birth_place: str, stu
                 prompt
             )
             return response.choices[0].message.content.strip()
+
         except Exception as e:
             logger.error(f"GigaChat error: {e}")
-            return "⚠️ Ошибка генерации гороскопа"
+            return "⚠️ Ошибка генерации"
 
 # ====================== STATE ======================
 last_request = {}
@@ -117,26 +115,25 @@ last_request = {}
 @dp.message(CommandStart())
 async def start(message: Message, state: FSMContext):
     async with aiosqlite.connect(DB_NAME) as db:
-        cursor = await db.execute(
+        cur = await db.execute(
             "SELECT 1 FROM users WHERE user_id=?",
             (message.from_user.id,)
         )
-        if await cursor.fetchone():
-            await message.answer("Ты уже зарегистрирован", reply_markup=main_keyboard)
-            return
+        if await cur.fetchone():
+            return await message.answer("Ты уже зарегистрирован", reply_markup=main_keyboard)
 
     await state.set_state(Register.zodiac)
-    await message.answer("Выбери знак зодиака:", reply_markup=zodiac_keyboard)
+    await message.answer("Выбери знак зодиака ✨", reply_markup=zodiac_keyboard)
 
 
 @dp.message(Register.zodiac)
 async def zodiac_step(message: Message, state: FSMContext):
     if message.text not in zodiacs:
-        return await message.answer("Выбери знак из кнопок")
+        return await message.answer("Выбери знак кнопкой 👇")
 
     await state.update_data(zodiac=message.text)
     await state.set_state(Register.birth_time)
-    await message.answer("Время рождения (HH:MM)", reply_markup=ReplyKeyboardRemove())
+    await message.answer("Время рождения (HH:MM) ⏰", reply_markup=ReplyKeyboardRemove())
 
 
 @dp.message(Register.birth_time)
@@ -146,7 +143,7 @@ async def time_step(message: Message, state: FSMContext):
 
     await state.update_data(birth_time=message.text)
     await state.set_state(Register.birth_place)
-    await message.answer("Город, страна")
+    await message.answer("Город 🌍")
 
 
 @dp.message(Register.birth_place)
@@ -170,9 +167,9 @@ async def place_step(message: Message, state: FSMContext):
         await db.commit()
 
     await state.clear()
-    await message.answer("✅ Готово!", reply_markup=main_keyboard)
+    await message.answer("Готово! 🎉", reply_markup=main_keyboard)
 
-# ====================== HOROSCOPE NOW ======================
+# ====================== NOW ======================
 @dp.message(F.text == "Получить гороскоп сейчас")
 async def now(message: Message):
     uid = message.from_user.id
@@ -183,11 +180,11 @@ async def now(message: Message):
     last_request[uid] = datetime.now()
 
     async with aiosqlite.connect(DB_NAME) as db:
-        cursor = await db.execute(
+        cur = await db.execute(
             "SELECT zodiac, birth_time, birth_place, student_mode FROM users WHERE user_id=?",
             (uid,)
         )
-        user = await cursor.fetchone()
+        user = await cur.fetchone()
 
     if not user:
         return await message.answer("Сначала /start")
@@ -201,11 +198,11 @@ async def toggle_student(message: Message):
     uid = message.from_user.id
 
     async with aiosqlite.connect(DB_NAME) as db:
-        cursor = await db.execute(
+        cur = await db.execute(
             "SELECT student_mode FROM users WHERE user_id=?",
             (uid,)
         )
-        row = await cursor.fetchone()
+        row = await cur.fetchone()
 
         if not row:
             return await message.answer("Сначала /start")
@@ -218,7 +215,7 @@ async def toggle_student(message: Message):
         )
         await db.commit()
 
-    await message.answer(f"Режим студента: {'ON' if new_mode else 'OFF'}")
+    await message.answer(f"Режим: {'ON 🎓' if new_mode else 'OFF 🌙'}")
 
 # ====================== RESET ======================
 @dp.message(F.text == "Сбросить регистрацию")
@@ -231,13 +228,11 @@ async def reset(message: Message, state: FSMContext):
 
     await message.answer("Сброшено. /start", reply_markup=ReplyKeyboardRemove())
 
-# ====================== DAILY SCHEDULER ======================
+# ====================== DAILY ======================
 async def send_daily(bot: Bot):
     async with aiosqlite.connect(DB_NAME) as db:
-        cursor = await db.execute(
-            "SELECT user_id, zodiac, birth_time, birth_place, student_mode FROM users"
-        )
-        users = await cursor.fetchall()
+        cur = await db.execute("SELECT user_id, zodiac, birth_time, birth_place, student_mode FROM users")
+        users = await cur.fetchall()
 
     for u in users:
         try:
@@ -246,26 +241,41 @@ async def send_daily(bot: Bot):
         except Exception as e:
             logger.warning(f"Send error {u[0]}: {e}")
 
+# ====================== POLLING (FIX FOR RAILWAY) ======================
+async def run_polling(bot: Bot):
+    while True:
+        try:
+            logger.info("📡 Polling started")
+            await dp.start_polling(bot)
+
+        except asyncio.CancelledError:
+            break
+
+        except Exception as e:
+            logger.error(f"Polling crashed: {e}")
+            await asyncio.sleep(5)
+
 # ====================== MAIN ======================
 async def main():
     await init_db()
 
     bot = Bot(
-    token=TOKEN,
-    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+        token=TOKEN,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
 
     scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
     scheduler.add_job(send_daily, "cron", hour=7, minute=30, args=[bot])
     scheduler.start()
 
-    logger.info("🚀 Бот запущен")
+    logger.info("🚀 BOT STARTED")
 
     try:
         await dp.start_polling(bot)
     finally:
         await bot.session.close()
         scheduler.shutdown()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
