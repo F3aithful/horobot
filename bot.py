@@ -15,7 +15,7 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKey
 from aiogram.client.default import DefaultBotProperties
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from gigachat import GigaChat
+from gigachat import Gigachat
 
 # ====================== ТОКЕНЫ ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ ======================
 TOKEN = os.getenv("TELEGRAM_TOKEN")
