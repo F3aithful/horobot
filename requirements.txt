@@ -1,4 +1,4 @@
-aiogram==3.4.1
+﻿aiogram==3.4.1
 aiosqlite==0.19.0
 apscheduler==3.10.4
-gigachat==0.1.0
+gigachat==0.0.10
