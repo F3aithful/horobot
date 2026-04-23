@@ -1,3 +1,4 @@
+import os
 import asyncio
 import logging
 import re
@@ -16,10 +17,16 @@ from aiogram.client.default import DefaultBotProperties
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from gigachat import GigaChat
 
-# ====================== ТОКЕНЫ (ВРЕМЕННО ПРЯМО В КОДЕ) ======================
-TOKEN = "8762682425:AAF41Nx6iksQdyWE38RpUl3kYwHo9pdTky8"
-GIGACHAT_CREDENTIALS = "MDE5ZDkyNjEtOGNlMS03MGMwLTg4ODktMGViZTQzYTVhNTk2OmY5MDQ4YmUyLTA5NmItNGFjNC04Mzg1LWVlMjYxMmU5NDRjMg=="
+# ====================== ТОКЕНЫ ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ ======================
+TOKEN = os.getenv("TELEGRAM_TOKEN")
+GIGACHAT_CREDENTIALS = os.getenv("GIGACHAT_CREDENTIALS")
 DB_NAME = "users.db"
+
+# Проверка что переменные установлены
+if not TOKEN:
+    raise ValueError("TELEGRAM_TOKEN не задан в переменных окружения!")
+if not GIGACHAT_CREDENTIALS:
+    raise ValueError("GIGACHAT_CREDENTIALS не задан в переменных окружения!")
 
 # ====================== ЛОГИ ======================
 logging.basicConfig(
@@ -327,5 +334,5 @@ async def main():
         scheduler.shutdown()
 
 if __name__ == "__main__":
-    print("Запуск бота...")
+    print("🚀 Запуск бота...")
     asyncio.run(main())

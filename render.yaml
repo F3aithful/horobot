@@ -1,0 +1,11 @@
+﻿services:
+  - type: web
+    name: horoscope-bot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: TELEGRAM_TOKEN
+        sync: false
+      - key: GIGACHAT_CREDENTIALS
+        sync: false
