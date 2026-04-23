@@ -15,30 +15,30 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKey
 from aiogram.client.default import DefaultBotProperties
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from gigachat import GigaChat
+from gigachat import Gigachat
 
-# ====================== ТОКЕНЫ ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ ======================
+# ====================== РўРћРљР•РќР« РР— РџР•Р Р•РњР•РќРќР«РҐ РћРљР РЈР–Р•РќРРЇ ======================
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 GIGACHAT_CREDENTIALS = os.getenv("GIGACHAT_CREDENTIALS")
 DB_NAME = "users.db"
 
-# Проверка что переменные установлены
+# РџСЂРѕРІРµСЂРєР° С‡С‚Рѕ РїРµСЂРµРјРµРЅРЅС‹Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅС‹
 if not TOKEN:
-    raise ValueError("TELEGRAM_TOKEN не задан в переменных окружения!")
+    raise ValueError("TELEGRAM_TOKEN РЅРµ Р·Р°РґР°РЅ РІ РїРµСЂРµРјРµРЅРЅС‹С… РѕРєСЂСѓР¶РµРЅРёСЏ!")
 if not GIGACHAT_CREDENTIALS:
-    raise ValueError("GIGACHAT_CREDENTIALS не задан в переменных окружения!")
+    raise ValueError("GIGACHAT_CREDENTIALS РЅРµ Р·Р°РґР°РЅ РІ РїРµСЂРµРјРµРЅРЅС‹С… РѕРєСЂСѓР¶РµРЅРёСЏ!")
 
-# ====================== ЛОГИ ======================
+# ====================== Р›РћР“Р ======================
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
-# ====================== КЛАВИАТУРЫ ======================
+# ====================== РљР›РђР’РРђРўРЈР Р« ======================
 zodiacs = [
-    "Овен", "Телец", "Близнецы", "Рак", "Лев", "Дева",
-    "Весы", "Скорпион", "Стрелец", "Козерог", "Водолей", "Рыбы"
+    "РћРІРµРЅ", "РўРµР»РµС†", "Р‘Р»РёР·РЅРµС†С‹", "Р Р°Рє", "Р›РµРІ", "Р”РµРІР°",
+    "Р’РµСЃС‹", "РЎРєРѕСЂРїРёРѕРЅ", "РЎС‚СЂРµР»РµС†", "РљРѕР·РµСЂРѕРі", "Р’РѕРґРѕР»РµР№", "Р С‹Р±С‹"
 ]
 
 zodiac_keyboard = ReplyKeyboardMarkup(
@@ -49,9 +49,9 @@ zodiac_keyboard = ReplyKeyboardMarkup(
 
 main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text="🌟 Получить гороскоп сейчас")],
-        [KeyboardButton(text="📚 Режим студента")],
-        [KeyboardButton(text="🔄 Сбросить регистрацию")]
+        [KeyboardButton(text="рџЊџ РџРѕР»СѓС‡РёС‚СЊ РіРѕСЂРѕСЃРєРѕРї СЃРµР№С‡Р°СЃ")],
+        [KeyboardButton(text="рџ“љ Р РµР¶РёРј СЃС‚СѓРґРµРЅС‚Р°")],
+        [KeyboardButton(text="рџ”„ РЎР±СЂРѕСЃРёС‚СЊ СЂРµРіРёСЃС‚СЂР°С†РёСЋ")]
     ],
     resize_keyboard=True
 )
@@ -81,7 +81,7 @@ async def init_db():
             )
         """)
         await db.commit()
-    logger.info("✅ База данных инициализирована")
+    logger.info("вњ… Р‘Р°Р·Р° РґР°РЅРЅС‹С… РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅР°")
 
 async def get_user(user_id: int):
     async with get_db() as db:
@@ -130,31 +130,31 @@ try:
         verify_ssl_certs=False,
         timeout=30
     )
-    logger.info("✅ GigaChat инициализирован")
+    logger.info("вњ… GigaChat РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅ")
 except Exception as e:
-    logger.error(f"❌ Ошибка инициализации GigaChat: {e}")
+    logger.error(f"вќЊ РћС€РёР±РєР° РёРЅРёС†РёР°Р»РёР·Р°С†РёРё GigaChat: {e}")
     gigachat = None
 
 semaphore = asyncio.Semaphore(5)
 
 async def generate_horoscope(zodiac: str, birth_time: str, birth_place: str, student: bool = False):
     if gigachat is None:
-        return "⚠️ Сервис временно недоступен. Пожалуйста, попробуйте позже."
+        return "вљ пёЏ РЎРµСЂРІРёСЃ РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРµРЅ. РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РїРѕРїСЂРѕР±СѓР№С‚Рµ РїРѕР·Р¶Рµ."
     
     async with semaphore:
         mode = ""
         if student:
-            mode = "Акцент: учеба, экзамены, дедлайны, мотивация."
+            mode = "РђРєС†РµРЅС‚: СѓС‡РµР±Р°, СЌРєР·Р°РјРµРЅС‹, РґРµРґР»Р°Р№РЅС‹, РјРѕС‚РёРІР°С†РёСЏ."
 
         prompt = f"""
-Ты астролог с лёгким юмором.
+РўС‹ Р°СЃС‚СЂРѕР»РѕРі СЃ Р»С‘РіРєРёРј СЋРјРѕСЂРѕРј.
 {mode}
 
-Знак: {zodiac}
-Время рождения: {birth_time}
-Место рождения: {birth_place}
+Р—РЅР°Рє: {zodiac}
+Р’СЂРµРјСЏ СЂРѕР¶РґРµРЅРёСЏ: {birth_time}
+РњРµСЃС‚Рѕ СЂРѕР¶РґРµРЅРёСЏ: {birth_place}
 
-Напиши живой гороскоп (~150-200 слов) и добавь побольше эмодзи.
+РќР°РїРёС€Рё Р¶РёРІРѕР№ РіРѕСЂРѕСЃРєРѕРї (~150-200 СЃР»РѕРІ) Рё РґРѕР±Р°РІСЊ РїРѕР±РѕР»СЊС€Рµ СЌРјРѕРґР·Рё.
 """
 
         try:
@@ -166,7 +166,7 @@ async def generate_horoscope(zodiac: str, birth_time: str, birth_place: str, stu
             return response.choices[0].message.content.strip()
         except Exception as e:
             logger.error(f"GigaChat error: {e}")
-            return "⚠️ Ошибка генерации гороскопа. Попробуйте позже."
+            return "вљ пёЏ РћС€РёР±РєР° РіРµРЅРµСЂР°С†РёРё РіРѕСЂРѕСЃРєРѕРїР°. РџРѕРїСЂРѕР±СѓР№С‚Рµ РїРѕР·Р¶Рµ."
 
 # ====================== HANDLERS ======================
 dp = Dispatcher()
@@ -178,39 +178,39 @@ async def start(message: Message, state: FSMContext):
     
     if user:
         await message.answer(
-            "✨ Ты уже зарегистрирован! Используй кнопки ниже:",
+            "вњЁ РўС‹ СѓР¶Рµ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ! РСЃРїРѕР»СЊР·СѓР№ РєРЅРѕРїРєРё РЅРёР¶Рµ:",
             reply_markup=main_keyboard
         )
         return
 
     await state.set_state(Register.zodiac)
     await message.answer(
-        "🔮 Привет! Давай создадим твой персональный гороскоп.\n\n"
-        "Выбери свой знак зодиака:",
+        "рџ”® РџСЂРёРІРµС‚! Р”Р°РІР°Р№ СЃРѕР·РґР°РґРёРј С‚РІРѕР№ РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹Р№ РіРѕСЂРѕСЃРєРѕРї.\n\n"
+        "Р’С‹Р±РµСЂРё СЃРІРѕР№ Р·РЅР°Рє Р·РѕРґРёР°РєР°:",
         reply_markup=zodiac_keyboard
     )
 
 @dp.message(Register.zodiac)
 async def zodiac_step(message: Message, state: FSMContext):
     if message.text not in zodiacs:
-        return await message.answer("❌ Пожалуйста, выбери знак из кнопок ниже:", reply_markup=zodiac_keyboard)
+        return await message.answer("вќЊ РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РІС‹Р±РµСЂРё Р·РЅР°Рє РёР· РєРЅРѕРїРѕРє РЅРёР¶Рµ:", reply_markup=zodiac_keyboard)
 
     await state.update_data(zodiac=message.text)
     await state.set_state(Register.birth_time)
     await message.answer(
-        "⏰ Отлично! Теперь укажи время рождения (в формате ЧЧ:ММ)\n"
-        "Пример: 14:30",
+        "вЏ° РћС‚Р»РёС‡РЅРѕ! РўРµРїРµСЂСЊ СѓРєР°Р¶Рё РІСЂРµРјСЏ СЂРѕР¶РґРµРЅРёСЏ (РІ С„РѕСЂРјР°С‚Рµ Р§Р§:РњРњ)\n"
+        "РџСЂРёРјРµСЂ: 14:30",
         reply_markup=ReplyKeyboardRemove()
     )
 
 @dp.message(Register.birth_time)
 async def time_step(message: Message, state: FSMContext):
     if not re.match(r"^([01]?\d|2[0-3]):[0-5]\d$", message.text):
-        return await message.answer("❌ Неверный формат! Используй ЧЧ:ММ, например: 14:30")
+        return await message.answer("вќЊ РќРµРІРµСЂРЅС‹Р№ С„РѕСЂРјР°С‚! РСЃРїРѕР»СЊР·СѓР№ Р§Р§:РњРњ, РЅР°РїСЂРёРјРµСЂ: 14:30")
 
     await state.update_data(birth_time=message.text)
     await state.set_state(Register.birth_place)
-    await message.answer("🌍 Укажи место рождения (город, страна):")
+    await message.answer("рџЊЌ РЈРєР°Р¶Рё РјРµСЃС‚Рѕ СЂРѕР¶РґРµРЅРёСЏ (РіРѕСЂРѕРґ, СЃС‚СЂР°РЅР°):")
 
 @dp.message(Register.birth_place)
 async def place_step(message: Message, state: FSMContext):
@@ -225,71 +225,71 @@ async def place_step(message: Message, state: FSMContext):
 
     await state.clear()
     await message.answer(
-        "✅ Регистрация завершена!\n\n"
-        "Теперь ты можешь:\n"
-        "🌟 Получить гороскоп сейчас\n"
-        "📚 Включить режим студента\n"
-        "🔄 Сбросить регистрацию",
+        "вњ… Р РµРіРёСЃС‚СЂР°С†РёСЏ Р·Р°РІРµСЂС€РµРЅР°!\n\n"
+        "РўРµРїРµСЂСЊ С‚С‹ РјРѕР¶РµС€СЊ:\n"
+        "рџЊџ РџРѕР»СѓС‡РёС‚СЊ РіРѕСЂРѕСЃРєРѕРї СЃРµР№С‡Р°СЃ\n"
+        "рџ“љ Р’РєР»СЋС‡РёС‚СЊ СЂРµР¶РёРј СЃС‚СѓРґРµРЅС‚Р°\n"
+        "рџ”„ РЎР±СЂРѕСЃРёС‚СЊ СЂРµРіРёСЃС‚СЂР°С†РёСЋ",
         reply_markup=main_keyboard
     )
 
-@dp.message(F.text.contains("Получить гороскоп"))
+@dp.message(F.text.contains("РџРѕР»СѓС‡РёС‚СЊ РіРѕСЂРѕСЃРєРѕРї"))
 async def now(message: Message):
     uid = message.from_user.id
 
     if uid in last_request and datetime.now() - last_request[uid] < timedelta(seconds=20):
         remaining = 20 - (datetime.now() - last_request[uid]).seconds
-        return await message.answer(f"⏳ Подожди {remaining} секунд перед следующим запросом")
+        return await message.answer(f"вЏі РџРѕРґРѕР¶РґРё {remaining} СЃРµРєСѓРЅРґ РїРµСЂРµРґ СЃР»РµРґСѓСЋС‰РёРј Р·Р°РїСЂРѕСЃРѕРј")
 
     user = await get_user(uid)
     if not user:
         return await message.answer(
-            "❌ Сначала зарегистрируйся с помощью /start",
+            "вќЊ РЎРЅР°С‡Р°Р»Р° Р·Р°СЂРµРіРёСЃС‚СЂРёСЂСѓР№СЃСЏ СЃ РїРѕРјРѕС‰СЊСЋ /start",
             reply_markup=ReplyKeyboardRemove()
         )
 
     last_request[uid] = datetime.now()
     
-    status_msg = await message.answer("🔮 Генерирую гороскоп... Подожди немного")
+    status_msg = await message.answer("рџ”® Р“РµРЅРµСЂРёСЂСѓСЋ РіРѕСЂРѕСЃРєРѕРї... РџРѕРґРѕР¶РґРё РЅРµРјРЅРѕРіРѕ")
     
     text = await generate_horoscope(user[0], user[1], user[2], bool(user[3]))
     
     await status_msg.delete()
     await message.answer(text, parse_mode=ParseMode.HTML)
 
-@dp.message(F.text.contains("Режим студента"))
+@dp.message(F.text.contains("Р РµР¶РёРј СЃС‚СѓРґРµРЅС‚Р°"))
 async def toggle_student(message: Message):
     uid = message.from_user.id
 
     user = await get_user(uid)
     if not user:
-        return await message.answer("❌ Сначала зарегистрируйся с помощью /start")
+        return await message.answer("вќЊ РЎРЅР°С‡Р°Р»Р° Р·Р°СЂРµРіРёСЃС‚СЂРёСЂСѓР№СЃСЏ СЃ РїРѕРјРѕС‰СЊСЋ /start")
 
     new_mode = 1 - user[3]
     await update_student_mode(uid, new_mode)
     
-    status = "✅ ВКЛЮЧЕН" if new_mode else "❌ ВЫКЛЮЧЕН"
-    await message.answer(f"📚 Режим студента {status}\n\nТеперь гороскопы будут с акцентом на учебу!")
+    status = "вњ… Р’РљР›Р®Р§Р•Рќ" if new_mode else "вќЊ Р’Р«РљР›Р®Р§Р•Рќ"
+    await message.answer(f"рџ“љ Р РµР¶РёРј СЃС‚СѓРґРµРЅС‚Р° {status}\n\nРўРµРїРµСЂСЊ РіРѕСЂРѕСЃРєРѕРїС‹ Р±СѓРґСѓС‚ СЃ Р°РєС†РµРЅС‚РѕРј РЅР° СѓС‡РµР±Сѓ!")
 
-@dp.message(F.text.contains("Сбросить регистрацию"))
+@dp.message(F.text.contains("РЎР±СЂРѕСЃРёС‚СЊ СЂРµРіРёСЃС‚СЂР°С†РёСЋ"))
 async def reset(message: Message, state: FSMContext):
     await state.clear()
     await delete_user(message.from_user.id)
     
     await message.answer(
-        "🔄 Регистрация сброшена!\n"
-        "Чтобы начать заново, отправь /start",
+        "рџ”„ Р РµРіРёСЃС‚СЂР°С†РёСЏ СЃР±СЂРѕС€РµРЅР°!\n"
+        "Р§С‚РѕР±С‹ РЅР°С‡Р°С‚СЊ Р·Р°РЅРѕРІРѕ, РѕС‚РїСЂР°РІСЊ /start",
         reply_markup=ReplyKeyboardRemove()
     )
 
 # ====================== DAILY SCHEDULER ======================
 async def send_daily(bot: Bot):
-    logger.info("📨 Начинаю ежедневную рассылку гороскопов")
+    logger.info("рџ“Ё РќР°С‡РёРЅР°СЋ РµР¶РµРґРЅРµРІРЅСѓСЋ СЂР°СЃСЃС‹Р»РєСѓ РіРѕСЂРѕСЃРєРѕРїРѕРІ")
     
     users = await get_all_users()
     
     if not users:
-        logger.info("Нет пользователей для рассылки")
+        logger.info("РќРµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РґР»СЏ СЂР°СЃСЃС‹Р»РєРё")
         return
     
     success_count = 0
@@ -300,17 +300,17 @@ async def send_daily(bot: Bot):
             success_count += 1
             await asyncio.sleep(0.5)
         except Exception as e:
-            logger.warning(f"Не удалось отправить гороскоп пользователю {user[0]}: {e}")
+            logger.warning(f"РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РїСЂР°РІРёС‚СЊ РіРѕСЂРѕСЃРєРѕРї РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ {user[0]}: {e}")
     
-    logger.info(f"✅ Рассылка завершена. Отправлено: {success_count}/{len(users)}")
+    logger.info(f"вњ… Р Р°СЃСЃС‹Р»РєР° Р·Р°РІРµСЂС€РµРЅР°. РћС‚РїСЂР°РІР»РµРЅРѕ: {success_count}/{len(users)}")
 
 # ====================== MAIN ======================
 async def on_startup(bot: Bot):
     await init_db()
-    logger.info("🚀 Бот запущен и готов к работе")
+    logger.info("рџљЂ Р‘РѕС‚ Р·Р°РїСѓС‰РµРЅ Рё РіРѕС‚РѕРІ Рє СЂР°Р±РѕС‚Рµ")
 
 async def on_shutdown(bot: Bot):
-    logger.info("👋 Бот останавливается...")
+    logger.info("рџ‘‹ Р‘РѕС‚ РѕСЃС‚Р°РЅР°РІР»РёРІР°РµС‚СЃСЏ...")
     if hasattr(bot, 'session'):
         await bot.session.close()
 
@@ -334,5 +334,5 @@ async def main():
         scheduler.shutdown()
 
 if __name__ == "__main__":
-    print("🚀 Запуск бота...")
+    print("рџљЂ Р—Р°РїСѓСЃРє Р±РѕС‚Р°...")
     asyncio.run(main())
